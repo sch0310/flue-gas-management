@@ -154,7 +154,7 @@ def index():
     <body>
         <div class="header">
             <h1>🏭 烟气运维标气管理系统</h1>
-            <p>6个现场标气统一管理 · 到期前45天自动提醒</p>
+            <p>现场标气统一管理</p>
         </div>
         <div class="container">
             <div class="stats">
