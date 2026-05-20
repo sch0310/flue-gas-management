@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>烟气运维标气管理系统 - 快捷访问</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:linear-gradient(135deg,#667eea,#764ba2); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+        .card { background:white; border-radius:20px; padding:40px; max-width:500px; width:100%; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+        .card h1 { color:#667eea; font-size:1.5rem; margin-bottom:10px; text-align:center; }
+        .card .subtitle { color:#999; text-align:center; margin-bottom:30px; font-size:0.9rem; }
+        .btn-group { display:flex; flex-direction:column; gap:15px; margin-bottom:30px; }
+        .btn { display:block; padding:15px; border-radius:12px; text-decoration:none; font-weight:600; text-align:center; transition:transform 0.2s,box-shadow 0.2s; color:white; }
+        .btn:hover { transform:translateY(-2px); box-shadow:0 5px 15px rgba(0,0,0,0.2); }
+        .btn-primary { background:linear-gradient(135deg,#667eea,#764ba2); }
+        .btn-success { background:#52c41a; }
+        .btn-warning { background:#faad14; color:#333; }
+        .btn-danger { background:#ff4d4f; }
+        .section-title { font-size:0.85rem; color:#999; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; margin-top:20px; }
+        .qr-section { text-align:center; margin-bottom:30px; }
+        .qr-img { width:180px; height:180px; margin:0 auto 15px; border:2px solid #f0f0f0; border-radius:10px; }
+        .hint { font-size:0.8rem; color:#999; margin-top:10px; line-height:1.4; }
+        .config-hint { background:#fff7e6; border:1px solid #ffd591; border-radius:8px; padding:12px; margin-bottom:20px; font-size:0.85rem; color:#d46b08; }
+        .config-hint strong { display:block; margin-bottom:5px; }
+        .steps { font-size:0.85rem; color:#666; line-height:1.6; }
+        .steps p { margin-top:8px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🏭 烟气运维标气管理</h1>
+        <p class="subtitle">6个现场标气统一管理</p>
+        
+        <div class="config-hint">
+            <strong>⚠️ 首次使用必读</strong>
+            请先进入系统配置，填写 Server酱 SendKey，才能接收微信提醒！
+        </div>
+
+        <div class="btn-group">
+            <a href="https://webview.e2b.bj10.sandbox.cloudstudio.club/?x-cs-sandbox-id=0cbe2734e53f44fc9e0294134d1cf31c&x-cs-sandbox-port=5000" class="btn btn-primary">🏠 进入首页</a>
+            <a href="https://webview.e2b.bj10.sandbox.cloudstudio.club/form?x-cs-sandbox-id=0cbe2734e53f44fc9e0294134d1cf31c&x-cs-sandbox-port=5000" class="btn btn-success">➕ 新增标气记录</a>
+            <a href="https://webview.e2b.bj10.sandbox.cloudstudio.clb/check?x-cs-sandbox-id=0cbe2734e53f44fc9e0294134d1cf31c&x-cs-sandbox-port=5000" class="btn btn-warning">🔔 检查提醒</a>
+            <a href="https://webview.e2b.bj10.sandbox.cloudstudio.clb/config?x-cs-sandbox-id=0cbe2734e53f44fc9e0294134d1cf31c&x-cs-sandbox-port=5000" class="btn btn-danger">⚙️ 系统配置</a>
+        </div>
+
+        <div class="section-title">📱 手机扫码填写标气</div>
+        <div class="qr-section">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAk4AAAJOAQAAAABpIrVYAAAFBklEQVR4nO2dQWrsSAyGf40NWbphDpCjODcLczP7KDnAA/cyYKO3qJJKZWcxzKQfLfLXoolT5Y82qIVK9UsWxTeN46/vIgFEEUUUUUQRRRRRRBFFFFFE/WjUKnUAdxGsMgK4i8jbfQTWGwDgKJciNwDr7bB7bo/6VkQR9a0oqKqqLpOqqu4oH/VStS7ZBsW8+WIAwLSf7n3OBySKqCvqEPPZQHPwqqoqcjsE62v9S97tZ4BVRB76rYgi6qGo+wjMGyDvGyBv9xG6TDuqb/8Yof9IXfIHvxVRRP3/MV7+M/0aBZMCwKco7ocAGKHr7deomBSYt7/xxaHUcz4gUURdUYOqbnFG3jCovAEllpf3jxeVt7sI1tfPGr/MHtM86FsRRdQDdql+uUz7v/6og7tUonKgqrW3UWJ0z874B4ChzKpuw/kuWjtRCVAINl4ut6G4el3MvG2iLgZOE7R2onKgvvDtqiUen3UH5m0o5m3rBw3pd19MaycqASpa+4Lqwkt6cS4By+4ZyK8vGbcTlQXV71ItMm9BzGx+vByeLvCjVYtp6NuJyoIy377BPLpd1s3o5ut8toTs1aODygGisqCCtTefXf5CMWqPWra6cw1BTPh90NqJenpUF7f38fisFrosQDNq1F+AqtY9LH07UTlQXSSjWmy3efQqddyiR6+hS8lUDtRAEpUG5dbuOUYz5Rqjw0x+mUwl0CaaCpjWTtTzo/pd6mDmDaDm2+0YFeEs1WOaEs7Q2onKgToXaLQqjTK7wI5R6+GpJSSj56e1E5UCFTx1CcA9FLcIXrt8+2TO3NOQ9O1EZUF1GUgLToIIZgFgW1X0sy13Q2snKgUqRjJzi1+mFpl72ZLuCJmYcuxE305UIlTQQDb5gCVm3LcDpiHoc/BgBpKoRKjQN6DYeFTy9vr2KR4s1SB/Uh+0dqJyoQ7rIDDVmEZEaj8Z1Y+Xul9db4fY4kOs20yKByTqR6OCcuDs2xdLx2jTxHigXhdTA0lUItS5LrWMYsBNGgb0Z0o7ugw9rZ2oFKg+A6kmh2liX1eAnfLtaj8I7lKJyoKKPhuw+CWqHK1C1aVh8W76dqISoTySMXsGmvKxr+GA6duDTFJ3qsKISoPqFb/WLMY3rdWeW2le6CJjygH6dqKSoIJvb/Uaqs3uN4T2MrF8IxRy0NqJSoHqT5c8LvHyjaXJYbZusdd6MANJVBZUjGS8sLqq2qcmf/SJzeN2nBqG0dqJSoJaX3egvn3jxSo37iPgjZNab2uTkH3GV3U85FsRRdRjfHusTrLzI0u6+/YV8J4D58w7fTtRT4/qO2yYFqxuWvez9vdUxWTdfmntRKVAnTeerU2Y9uqYUKzkITvrUolKhQqRTGgYFnOMfUFeme20M/TtRCVBXfrJhDqlcLBk5dkLWlF2p4aktRP1/KiggQw5xlaft7R1G3DRyQCgtROVBXXt344mh4klqWU0hSRrl4hKh7q8d8lHLE7te4VV7e8eRGK0dqISoTzRuIq9733+sNe6l53rXSS2G8DQicSe/QGJIqp/75Jnz/sO7WFdcfoYumon+naiMqPmUnF9iMjp9e9yep2wv7kj1wMS9SNRV98OBJG7NUGNakgNDU/Zv52oRKjTCZFL2z2I8eKO0L8dLSUf7n3OBySKqDbOOZlT3H7uhApcNGP07UQlQcn1sOg/juM5H5AooogiiiiiiCKKKKKIIoqoRKjfoLFXDBIpChsAAAAASUVORK5CYII=", class="qr-img" alt="QR Code">
+            <p class="hint">用手机扫描上方二维码<br>直接打开填写表单</p>
+        </div>
+
+        <div class="section-title">📖 快速使用指南</div>
+        <div class="steps">
+            <p><strong>1️⃣ 配置微信提醒</strong><br>点击系统配置 → 填写Server酱SendKey → 保存</p>
+            <p><strong>2️⃣ 添加标气记录</strong><br>选择工厂 → 标气自动联动 → 填写浓度(保留2位小数)和日期 → 提交</p>
+            <p><strong>3️⃣ 手机扫码填写</strong><br>点击扫码填写获取二维码，手机扫描后填写</p>
+            <p><strong>4️⃣ 接收到期提醒</strong><br>标气到期前45天，微信自动收到提醒通知</p>
+        </div>
+    </div>
+</body>
+</html>
