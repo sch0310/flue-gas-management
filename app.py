@@ -449,23 +449,8 @@ def config_page():
 
 @app.route('/qrcode')
 def qrcode_page():
-    """显示二维码页面"""
-    import qrcode
-    import io
-    import base64
-
-    # 获取当前访问地址
-    host = request.host_url.rstrip('/')
-    form_url = host + '/form'
-
-    # 生成二维码
-    qr = qrcode.QRCode(version=1, box_size=10, border=5)
-    qr.add_data(form_url)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white")
-    buf = io.BytesIO()
-    img.save(buf, format='PNG')
-    img_b64 = base64.b64encode(buf.getvalue()).decode()
+    """显示链接分享页面"""
+    form_url = request.host_url.rstrip('/') + '/form'
 
     html = '''
     <!DOCTYPE html>
@@ -473,26 +458,34 @@ def qrcode_page():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>扫码填写 - 标气管理</title>
+        <title>链接分享 - 标气管理</title>
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f7fa; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
             .card { background: white; border-radius: 20px; padding: 40px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.1); max-width: 400px; width: 100%; }
             .card h1 { color: #667eea; font-size: 1.3rem; margin-bottom: 10px; }
             .card p { color: #999; font-size: 0.9rem; margin-bottom: 30px; }
-            .qr-img { width: 200px; height: 200px; margin: 0 auto 30px; border: 2px solid #f0f0f0; border-radius: 10px; }
-            .url-box { background: #f5f7fa; border-radius: 8px; padding: 10px; font-size: 0.8rem; color: #666; word-break: break-all; margin-bottom: 20px; }
-            .btn-back { display: inline-block; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 8px; }
+            .url-box { background: #f5f7fa; border-radius: 8px; padding: 15px; font-size: 0.85rem; color: #667eea; word-break: break-all; margin-bottom: 20px; font-weight: 500; }
+            .btn { display: block; padding: 12px; border-radius: 8px; text-decoration: none; font-weight: 500; margin-bottom: 10px; }
+            .btn-primary { background: #667eea; color: white; }
+            .btn-success { background: #52c41a; color: white; border: none; cursor: pointer; font-size: 1rem; }
+            .btn-back { display: inline-block; padding: 10px 20px; background: #999; color: white; text-decoration: none; border-radius: 8px; margin-top: 10px; }
         </style>
     </head>
     <body>
         <div class="card">
-            <h1>📱 扫码填写标气信息</h1>
-            <p>用手机扫描下方二维码</p>
-            <img src="data:image/png;base64,''' + img_b64 + '''" class="qr-img" alt="QR Code">
+            <h1>📱 分享标气录入链接</h1>
+            <p>复制下方链接或点击直接打开</p>
             <div class="url-box">''' + form_url + '''</div>
+            <button class="btn btn-success" onclick="copyUrl()">📋 复制链接</button>
+            <a href="''' + form_url + '''" class="btn btn-primary">🔗 直接打开</a>
             <a href="/" class="btn-back">← 返回首页</a>
         </div>
+        <script>
+            function copyUrl() {
+                navigator.clipboard.writeText("''' + form_url + '''").then(() => alert("链接已复制！"));
+            }
+        </script>
     </body>
     </html>
     '''
