@@ -124,8 +124,8 @@ def index():
             .stat-card { background: white; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
             .stat-card .num { font-size: 2rem; font-weight: bold; color: #667eea; }
             .stat-card .label { font-size: 0.85rem; color: #888; margin-top: 5px; }
-            .btn-group { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-            .btn { display: inline-block; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 500; cursor: pointer; border: none; font-size: 0.95rem; }
+            .btn-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+            .btn { display: block; padding: 15px 20px; border-radius: 10px; text-decoration: none; font-weight: 500; cursor: pointer; border: none; font-size: 1rem; text-align: center; }
             .btn-primary { background: #667eea; color: white; }
             .btn-success { background: #52c41a; color: white; }
             .btn-warning { background: #faad14; color: #333; }
@@ -164,10 +164,10 @@ def index():
                 <div class="stat-card"><div class="num">{{ expired }}</div><div class="label">已过期</div></div>
             </div>
             <div class="btn-group">
-                <a href="/form" class="btn btn-primary">➕ 新增标气</a>
-                <a href="/qrcode" class="btn btn-success">📱 扫码填写</a>
-                <a href="/check" class="btn btn-warning">🔔 检查提醒</a>
-                <a href="/config" class="btn btn-danger">⚙️ 配置</a>
+                <a href="/form" class="btn btn-primary" style="display:block; margin-bottom:10px; text-align:center;">➕ 新增标气</a>
+                <a href="/qrcode" class="btn btn-success" style="display:block; margin-bottom:10px; text-align:center;">📱 分享链接</a>
+                <a href="/check" class="btn btn-warning" style="display:block; margin-bottom:10px; text-align:center;">🔔 检查提醒</a>
+                <a href="/config" class="btn btn-danger" style="display:block; margin-bottom:10px; text-align:center;">⚙️ 配置</a>
             </div>
             <div class="filter-bar">
                 <label>工厂筛选：</label>
