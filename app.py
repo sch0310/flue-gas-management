@@ -3,18 +3,86 @@
 """
 烟气运维标气管理系统
 作者: 孙朝辉
-功能: 标气统一管理，提起45天提醒
+功能: 标气统一管理，提前45天提醒
+数据库: Supabase Postgres (支持 SQLite  fallback)
 """
 
-import sqlite3
 import os
 import json
+import psycopg2
 from datetime import datetime, timedelta
 from flask import Flask, request, render_template_string, redirect, url_for, jsonify, flash
 from flask_cors import CORS
 
-DB_PATH = 'flue_gas.db'
 CONFIG_PATH = 'config.json'
+
+# ============================================================
+# 数据库连接配置
+# ============================================================
+# 优先使用环境变量 DATABASE_URL (Supabase Postgres)
+# 如果没有设置，则使用 SQLite (本地开发)
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+def get_db_connection():
+    """获取数据库连接"""
+    if DATABASE_URL:
+        # 使用 Supabase Postgres
+        conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+        return conn, 'postgres'
+    else:
+        # 使用 SQLite (本地开发)
+        import sqlite3
+        conn = sqlite3.connect('flue_gas.db')
+        return conn, 'sqlite'
+
+def init_db():
+    """初始化数据库表"""
+    conn, db_type = get_db_connection()
+    c = conn.cursor()
+    
+    if db_type == 'postgres':
+        # Postgres 语法
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS gas_standards (
+                id SERIAL PRIMARY KEY,
+                factory VARCHAR(100) NOT NULL,
+                gas_name VARCHAR(100) NOT NULL,
+                concentration FLOAT NOT NULL,
+                production_date DATE NOT NULL,
+                expiry_date DATE NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                reminder_sent INTEGER DEFAULT 0
+            )
+        ''')
+        # 创建索引（IF NOT EXISTS 在 Postgres 12+ 中支持）
+        try:
+            c.execute('CREATE INDEX idx_expiry ON gas_standards(expiry_date)')
+        except:
+            pass
+        try:
+            c.execute('CREATE INDEX idx_factory ON gas_standards(factory)')
+        except:
+            pass
+    else:
+        # SQLite 语法
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS gas_standards (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                factory TEXT NOT NULL,
+                gas_name TEXT NOT NULL,
+                concentration REAL NOT NULL,
+                production_date TEXT NOT NULL,
+                expiry_date TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                reminder_sent INTEGER DEFAULT 0
+            )
+        ''')
+        c.execute('CREATE INDEX IF NOT EXISTS idx_expiry ON gas_standards(expiry_date)')
+        c.execute('CREATE INDEX IF NOT EXISTS idx_factory ON gas_standards(factory)')
+    
+    conn.commit()
+    conn.close()
+    print(f"✅ 数据库初始化完成 ({db_type})")
 
 # ============================================================
 # 工厂与标气配置
@@ -42,29 +110,6 @@ def save_config(config):
         json.dump(config, f, ensure_ascii=False, indent=2)
 
 # ============================================================
-# 数据库初始化
-# ============================================================
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS gas_standards (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            factory TEXT NOT NULL,
-            gas_name TEXT NOT NULL,
-            concentration REAL NOT NULL,
-            production_date TEXT NOT NULL,
-            expiry_date TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            reminder_sent INTEGER DEFAULT 0
-        )
-    ''')
-    c.execute('CREATE INDEX IF NOT EXISTS idx_expiry ON gas_standards(expiry_date)')
-    c.execute('CREATE INDEX IF NOT EXISTS idx_factory ON gas_standards(factory)')
-    conn.commit()
-    conn.close()
-
-# ============================================================
 # Flask 应用
 # ============================================================
 app = Flask(__name__)
@@ -74,13 +119,23 @@ CORS(app)
 @app.route('/')
 def index():
     """首页 - 显示所有标气记录"""
-    conn = sqlite3.connect(DB_PATH)
+    conn, db_type = get_db_connection()
     c = conn.cursor()
-    c.execute('''
-        SELECT id, factory, gas_name, concentration, production_date, expiry_date, reminder_sent
-        FROM gas_standards
-        ORDER BY expiry_date ASC
-    ''')
+    
+    if db_type == 'postgres':
+        c.execute('''
+            SELECT id, factory, gas_name, concentration, 
+                   production_date::text, expiry_date::text, reminder_sent
+            FROM gas_standards
+            ORDER BY expiry_date ASC
+        ''')
+    else:
+        c.execute('''
+            SELECT id, factory, gas_name, concentration, production_date, expiry_date, reminder_sent
+            FROM gas_standards
+            ORDER BY expiry_date ASC
+        ''')
+    
     rows = c.fetchall()
     conn.close()
 
@@ -324,7 +379,7 @@ def form():
         </div>
         <script>
             const FACTORIES = ''' + factories_json + ''';
-
+            
             function updateGasOptions() {
                 const factory = document.getElementById('factory').value;
                 const gasSelect = document.getElementById('gas_name');
@@ -340,19 +395,19 @@ def form():
                     gasSelect.innerHTML = '<option value="">-- 请先选择工厂 --</option>';
                 }
             }
-
+            
             document.getElementById('gasForm').addEventListener('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
                 const data = Object.fromEntries(formData);
-
+                
                 // 验证浓度小数位数
                 const conc = parseFloat(data.concentration);
                 if (isNaN(conc) || conc < 0) {
                     showToast('请输入有效的浓度值', 'error');
                     return;
                 }
-
+                
                 fetch('/api/add', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -368,7 +423,7 @@ def form():
                     }
                 });
             });
-
+            
             function showToast(msg, type='success') {
                 const toast = document.getElementById('toast');
                 toast.textContent = msg;
@@ -376,7 +431,7 @@ def form():
                 toast.style.display = 'block';
                 setTimeout(() => toast.style.display = 'none', 3000);
             }
-
+            
             // 默认今天日期
             document.querySelector('input[name="production_date"]').value = new Date().toISOString().split('T')[0];
         </script>
@@ -394,7 +449,7 @@ def config_page():
         config['serverchan_send_key'] = send_key
         save_config(config)
         return redirect('/config?success=1')
-
+    
     config = load_config()
     success = request.args.get('success')
     html = '''
@@ -451,7 +506,7 @@ def config_page():
 def qrcode_page():
     """显示链接分享页面"""
     form_url = request.host_url.rstrip('/') + '/form'
-
+    
     html = '''
     <!DOCTYPE html>
     <html lang="zh-CN">
@@ -499,36 +554,49 @@ def api_add():
     gas_name = data.get('gas_name')
     concentration = data.get('concentration')
     production_date = data.get('production_date')
-
+    
     if not all([factory, gas_name, concentration, production_date]):
         return jsonify({'success': False, 'message': '请填写完整信息'})
-
+    
     try:
         concentration = float(concentration)
     except:
         return jsonify({'success': False, 'message': '浓度格式错误'})
-
+    
     # 计算到期日期（生产日期 + 365天）
     prod_date = datetime.strptime(production_date, '%Y-%m-%d')
     expiry_date = prod_date + timedelta(days=365)
-
-    conn = sqlite3.connect(DB_PATH)
+    
+    conn, db_type = get_db_connection()
     c = conn.cursor()
-    c.execute('''
-        INSERT INTO gas_standards (factory, gas_name, concentration, production_date, expiry_date, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', (factory, gas_name, concentration, production_date, expiry_date.strftime('%Y-%m-%d'), datetime.now().isoformat()))
+    
+    if db_type == 'postgres':
+        c.execute('''
+            INSERT INTO gas_standards (factory, gas_name, concentration, production_date, expiry_date, created_at, reminder_sent)
+            VALUES (%s, %s, %s, %s, %s, NOW(), 0)
+        ''', (factory, gas_name, concentration, production_date, expiry_date.strftime('%Y-%m-%d')))
+    else:
+        c.execute('''
+            INSERT INTO gas_standards (factory, gas_name, concentration, production_date, expiry_date, created_at, reminder_sent)
+            VALUES (?, ?, ?, ?, ?, ?, 0)
+        ''', (factory, gas_name, concentration, production_date, expiry_date.strftime('%Y-%m-%d'), datetime.now().isoformat()))
+    
     conn.commit()
     conn.close()
-
+    
     return jsonify({'success': True})
 
 @app.route('/api/delete/<int:record_id>', methods=['POST'])
 def api_delete(record_id):
     """API: 删除记录"""
-    conn = sqlite3.connect(DB_PATH)
+    conn, db_type = get_db_connection()
     c = conn.cursor()
-    c.execute('DELETE FROM gas_standards WHERE id = ?', (record_id,))
+    
+    if db_type == 'postgres':
+        c.execute('DELETE FROM gas_standards WHERE id = %s', (record_id,))
+    else:
+        c.execute('DELETE FROM gas_standards WHERE id = ?', (record_id,))
+    
     conn.commit()
     conn.close()
     return jsonify({'success': True})
@@ -538,7 +606,7 @@ def check_reminders():
     """检查并发送提醒（支持GET/POST）"""
     config = load_config()
     send_key = config.get('serverchan_send_key', '')
-
+    
     if not send_key:
         # 未配置，显示配置提示页面
         html = '''
@@ -568,20 +636,29 @@ def check_reminders():
         </html>
         '''
         return html
-
-    conn = sqlite3.connect(DB_PATH)
+    
+    conn, db_type = get_db_connection()
     c = conn.cursor()
-    c.execute('''
-        SELECT id, factory, gas_name, concentration, production_date, expiry_date
-        FROM gas_standards
-        WHERE reminder_sent = 0
-    ''')
+    
+    if db_type == 'postgres':
+        c.execute('''
+            SELECT id, factory, gas_name, concentration, production_date::text, expiry_date::text
+            FROM gas_standards
+            WHERE reminder_sent = 0
+        ''')
+    else:
+        c.execute('''
+            SELECT id, factory, gas_name, concentration, production_date, expiry_date
+            FROM gas_standards
+            WHERE reminder_sent = 0
+        ''')
+    
     rows = c.fetchall()
     conn.close()
-
+    
     today = datetime.now().date()
     reminders = []
-
+    
     for row in rows:
         expiry = datetime.strptime(row[5], '%Y-%m-%d').date()
         days_left = (expiry - today).days
@@ -595,7 +672,7 @@ def check_reminders():
                 'expiry_date': row[5],
                 'days_left': days_left
             })
-
+    
     # 发送微信提醒
     sent_count = 0
     failed_count = 0
@@ -619,9 +696,12 @@ def check_reminders():
             resp = requests.post(url, data={'title': title, 'desp': content}, timeout=10)
             if resp.json().get('code') == 0:
                 # 标记已发送
-                conn = sqlite3.connect(DB_PATH)
+                conn, db_type = get_db_connection()
                 c = conn.cursor()
-                c.execute('UPDATE gas_standards SET reminder_sent = 1 WHERE id = ?', (r['id'],))
+                if db_type == 'postgres':
+                    c.execute('UPDATE gas_standards SET reminder_sent = 1 WHERE id = %s', (r['id'],))
+                else:
+                    c.execute('UPDATE gas_standards SET reminder_sent = 1 WHERE id = ?', (r['id'],))
                 conn.commit()
                 conn.close()
                 sent_count += 1
@@ -630,7 +710,7 @@ def check_reminders():
         except Exception as e:
             print(f"发送失败: {e}")
             failed_count += 1
-
+    
     # 显示结果页面
     html = '''
     <!DOCTYPE html>
@@ -696,13 +776,21 @@ def check_reminders():
 @app.route('/api/records')
 def api_records():
     """API: 获取所有记录"""
-    conn = sqlite3.connect(DB_PATH)
+    conn, db_type = get_db_connection()
     c = conn.cursor()
-    c.execute('SELECT * FROM gas_standards ORDER BY expiry_date ASC')
-    rows = c.fetchall()
+    
+    if db_type == 'postgres':
+        c.execute('SELECT * FROM gas_standards ORDER BY expiry_date ASC')
+        rows = c.fetchall()
+        columns = ['id', 'factory', 'gas_name', 'concentration', 'production_date', 'expiry_date', 'created_at', 'reminder_sent']
+        result = [dict(zip(columns, row)) for row in rows]
+    else:
+        c.execute('SELECT * FROM gas_standards ORDER BY expiry_date ASC')
+        rows = c.fetchall()
+        columns = ['id', 'factory', 'gas_name', 'concentration', 'production_date', 'expiry_date', 'created_at', 'reminder_sent']
+        result = [dict(zip(columns, row)) for row in rows]
+    
     conn.close()
-    columns = ['id', 'factory', 'gas_name', 'concentration', 'production_date', 'expiry_date', 'created_at', 'reminder_sent']
-    result = [dict(zip(columns, row)) for row in rows]
     return jsonify(result)
 
 if __name__ == '__main__':
