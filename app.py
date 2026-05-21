@@ -23,11 +23,15 @@ CONFIG_PATH = 'config.json'
 # 如果没有设置，则使用 SQLite (本地开发)
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
+# Supabase 默认连接（用于 Render 部署）
+SUPABASE_DB_URL = 'postgresql://postgres.jnrkfdaajmubxdyssnxr:GJi4kWsTvRII0ihS@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres'
+
 def get_db_connection():
     """获取数据库连接"""
-    if DATABASE_URL:
+    db_url = DATABASE_URL or SUPABASE_DB_URL
+    if db_url:
         # 使用 Supabase Postgres
-        conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+        conn = psycopg2.connect(db_url, sslmode='require')
         return conn, 'postgres'
     else:
         # 使用 SQLite (本地开发)
