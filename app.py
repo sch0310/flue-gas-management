@@ -9,7 +9,6 @@
 
 import os
 import json
-import psycopg2
 from datetime import datetime, timedelta
 from flask import Flask, request, render_template_string, redirect, url_for, jsonify, flash
 from flask_cors import CORS
@@ -19,22 +18,19 @@ CONFIG_PATH = 'config.json'
 # ============================================================
 # 数据库连接配置
 # ============================================================
-# 优先使用环境变量 DATABASE_URL (Supabase Postgres)
-# 如果没有设置，则使用 SQLite (本地开发)
+# 优先使用环境变量 DATABASE_URL (Render Postgres)
+# 如果没有设置，则使用 SQLite (本地开发或 Render 临时存储)
 DATABASE_URL = os.environ.get('DATABASE_URL')
-
-# Supabase 默认连接（用于 Render 部署）
-SUPABASE_DB_URL = 'postgresql://postgres.jnrkfdaajmubxdyssnxr:GJi4kWsTvRII0ihS@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres'
 
 def get_db_connection():
     """获取数据库连接"""
-    db_url = DATABASE_URL or SUPABASE_DB_URL
-    if db_url:
-        # 使用 Supabase Postgres
-        conn = psycopg2.connect(db_url, sslmode='require')
+    if DATABASE_URL:
+        # 使用 Render PostgreSQL
+        import psycopg2
+        conn = psycopg2.connect(DATABASE_URL, sslmode='require')
         return conn, 'postgres'
     else:
-        # 使用 SQLite (本地开发)
+        # 使用 SQLite (本地开发 / Render 无数据库时)
         import sqlite3
         conn = sqlite3.connect('flue_gas.db')
         return conn, 'sqlite'
