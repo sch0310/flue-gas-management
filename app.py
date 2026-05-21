@@ -116,6 +116,10 @@ app = Flask(__name__)
 app.secret_key = 'flue_gas_management_2026'
 CORS(app)
 
+# 启动时自动初始化数据库（gunicorn 也会执行）
+with app.app_context():
+    init_db()
+
 @app.route('/')
 def index():
     """首页 - 显示所有标气记录"""
