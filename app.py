@@ -607,39 +607,12 @@ def api_delete(record_id):
 
 @app.route('/check')
 def check_reminders():
-    """检查并发送提醒（支持GET/POST）"""
+    """检查并发送提醒（支持GET/POST，可被外部调用）"""
     config = load_config()
     send_key = config.get('serverchan_send_key', '')
     
     if not send_key:
-        # 未配置，显示配置提示页面
-        html = '''
-        <!DOCTYPE html>
-        <html lang="zh-CN">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>检查提醒</title>
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f7fa; padding: 20px; }
-                .container { max-width: 600px; margin: 50px auto; background: white; border-radius: 15px; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-                h1 { color: #ff4d4f; margin-bottom: 20px; }
-                .hint { color: #999; line-height: 1.6; }
-                .btn { display: inline-block; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 8px; margin-top: 20px; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>⚠️ 未配置 Server酱 SendKey</h1>
-                <p class="hint">请先进入"配置"页面，填写 Server酱 SendKey，才能发送微信提醒。</p>
-                <p class="hint" style="margin-top:15px;">获取方式：访问 <a href="https://sct.ftqq.com" target="_blank">sct.ftqq.com</a> 注册并获取 SendKey</p>
-                <a href="/config" class="btn">前往配置 →</a>
-            </div>
-        </body>
-        </html>
-        '''
-        return html
+        return jsonify({'error': '未配置 Server酱 SendKey'}), 400
     
     conn, db_type = get_db_connection()
     c = conn.cursor()
@@ -658,7 +631,6 @@ def check_reminders():
         ''')
     
     rows = c.fetchall()
-    conn.close()
     
     today = datetime.now().date()
     reminders = []
@@ -700,14 +672,14 @@ def check_reminders():
             resp = requests.post(url, data={'title': title, 'desp': content}, timeout=10)
             if resp.json().get('code') == 0:
                 # 标记已发送
-                conn, db_type = get_db_connection()
-                c = conn.cursor()
-                if db_type == 'postgres':
-                    c.execute('UPDATE gas_standards SET reminder_sent = 1 WHERE id = %s', (r['id'],))
+                conn2, db_type2 = get_db_connection()  # 用新连接
+                c2 = conn2.cursor()
+                if db_type2 == 'postgres':
+                    c2.execute('UPDATE gas_standards SET reminder_sent = 1 WHERE id = %s', (r['id'],))
                 else:
-                    c.execute('UPDATE gas_standards SET reminder_sent = 1 WHERE id = ?', (r['id'],))
-                conn.commit()
-                conn.close()
+                    c2.execute('UPDATE gas_standards SET reminder_sent = 1 WHERE id = ?', (r['id'],))
+                conn2.commit()
+                conn2.close()
                 sent_count += 1
             else:
                 failed_count += 1
@@ -715,7 +687,18 @@ def check_reminders():
             print(f"发送失败: {e}")
             failed_count += 1
     
-    # 显示结果页面
+    conn.close()
+    
+    # 如果是浏览器访问，显示结果页面；否则返回 JSON
+    if request.headers.get('User-Agent', '').startswith('curl') or 'application/json' in request.headers.get('Accept', ''):
+        return jsonify({
+            'checked': len(rows),
+            'reminders': len(reminders),
+            'sent': sent_count,
+            'failed': failed_count
+        })
+    
+    # 浏览器访问，显示 HTML 页面
     html = '''
     <!DOCTYPE html>
     <html lang="zh-CN">
